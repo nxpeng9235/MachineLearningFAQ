@@ -23,13 +23,15 @@
 
     - L1正则化，又称LASSO、L1范数，是所有参数的绝对值之和。
         $$
-            {\lVert x \lVert}_1=\sum_{i=1}^m\lvert x_i \lvert
+            \lVert x \lVert_1=\sum_{i=1}^m\lvert x_i \lvert
         $$
     
     - L2正则化，又称Ridge，岭回归，是所有参数的平方和的平方根。
+
         $$
-            {\lVert x \lVert}_2=\sqrt{\sum_{i=1}^m x_i^2}
+            \lVert x \lVert_2=\sqrt{\sum_{i=1}^m x_i^2}
         $$
+
     - 两种范数都有助于降低过拟合风险。L1范数可以用于**特征选择**，但不能直接求导，因此不能使用常规的梯度下降法/牛顿法等方法进行学习；L2范数方便求导。
 
 2. L1范数的稀疏性 / 为何L1正则化可以用于特征选择？
