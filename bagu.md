@@ -455,5 +455,42 @@
 
 
 
+## Natural Language Processing
 
+### RNN / LSTM
+
+1. 为什么需要 RNN？
+
+    循环神经网络（Recurrent Neural Network, RNN）。当给定的数据是序列型数据，如文本、音频等数据时，我们往往希望模型能够学习到给定数据的上下文环境。例如，对于一个句子，序列模型试图从同一个句子前面的单词推导出关系。
+
+    ![RNN](imgs/rnn.png)
+
+    在循环神经网络的每一个时间步骤（time step）中，我们取一个输入 $x_i$ 和上一个节点的权值 $h_{i-1}$ 作为输入，并产生一个输出 $y_i$ 和权值 $h_i$，这个权值又被传递到下一个时间步骤，直到输入序列被读取完毕。
+
+    ![multi-tasks-rnn](imgs/multi-tasks.jpeg)
+
+    普通的 RNN（Vanilla RNN）常使用 BP 算法来训练权值，但由于**梯度消失 / 梯度爆炸**问题，RNN 会丧失学习远距离信息的能力。为了解决远距离依赖问题，提出了 LSTM（Long Short-Term Memory）。
+
+
+2. LSTM 网络
+
+    LSTM（Long Short-Term Memory）相对于普通 RNN 网络，能够显著的缓解长期依赖关系丢失的问题。LSTM 的主要思想是利用**门结构**来去除或添加细胞之间信息传递的能力。LSTM 拥有三个门，来保护和控制细胞状态，分别为**遗忘门**、**输入门**和**输出门**。
+
+    - 遗忘门
+
+        ![forget-gate](imgs/forget-gate.png)
+        第一步是决定从上一个细胞中保留多少消息。将上一细胞的状态 $h_{t-1}$ 和这一层的输入 $x_i$ 经过 sigmoid 层，输出一个 0-1 的值，代表要从上一层的细胞状态保留多少信息。
+
+    - 输入门
+
+        ![input-gate](imgs/input-gate.png)
+        这一步是决定在这一层的细胞状态中保留多少信息。将上一细胞的状态 $h_{t-1}$ 和这一层的输入 $x_i$ 分别经过 sigmoid 层和 tanh 层，得到一个候选的细胞状态 $\tilde{C}_t$。
+
+        ![update-cell](imgs/update-cell.png)
+        随后，根据遗忘门得到的遗忘比例 $f_t$ 和这一层要输入的细胞状态 $\tilde{C}_t$，得到这一层的最终细胞状态 $C_t = f_t*C_{t-1} + i_t*\tilde{C}_t$。
+
+    - 输出门
+
+        ![output-gate](imgs/output-gate.png)
+        最终，我们需要决定这一层的细胞的输出状态。将上一细胞的状态 $h_{t-1}$ 和这一层的输入 $x_i$ 经过 sigmoid 层，确定要输出的部分 $o_t$，再将这一层的细胞状态 $C_t$ 经过 tanh 层，再与 $o_t$ 结合，得到最终的输出状态 $h_t$。
 
