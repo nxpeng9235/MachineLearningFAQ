@@ -457,6 +457,35 @@
 
 ## Natural Language Processing
 
+### HMM / CRF
+
+1. 隐马尔可夫模型 Hidden Markov Model, HMM
+
+    - 马尔可夫链，即一个状态序列，满足在任意时刻 $t$ 的状态仅与其前一时刻的状态有关。隐马尔可夫链，则是无法直接观测到某一时刻的状态，而是要通过其他的观测状态才能预测隐藏的状态。
+    - 隐马尔可夫模型的两个基本假设：
+      - **齐次性假设**：即隐藏的马尔可夫状态在任意时刻的状态只依赖于前一时刻的状态，与其他时刻的状态无关；
+      - **观测独立性假设**：任意时刻的观测状态只取决与当前状态的隐藏状态，和其他时刻的观测状态或隐藏状态无关。
+    - 隐马尔可夫模型的五个要素：
+      - **隐藏状态集** $I$ = {$i_1$, $i_2$, ..., $i_N$}，即隐藏节点只能取值于该集合中的元素。
+      - **观测状态集** $O$ = {$o_1$, $o_2$, ..., $o_M$}，即观测节点的状态也只能取值于该集合中的元素。
+      - **隐藏状态转移矩阵** $A$ = $[a_{ij}]_{N\times N}$，表示从一种隐藏状态到另一种隐藏状态的转移概率。
+      - **观测概率矩阵** $B$ = $[b_{ij}]_{N\times M}$，表示对于某一种隐藏状态，其观测状态的分布概率。
+      - **初始隐藏状态概率** $\pi$ = $[p_1, p_2, ..., p_n]$，表示初始时刻处于各个隐藏状态的概率。
+    - 隐马尔可夫模型要求解的基本问题：
+      - **概率计算问题**。对于已知模型 $\lambda$ = $(A, B, \pi)$，和已知观测序列 $O$ = {$o_1$, $o_2$, ..., $o_M$}，求产生这种观测序列的概率是多少，即求 $p(O|\lambda)$。
+      - **学习问题**。对于已知观测序列 $O$ = {$o_1$, $o_2$, ..., $o_M$}，求解模型 $\lambda$ = $(A, B, \pi)$ 的参数，使得产生这种观测序列的概率 $p(O|\lambda)$ 最大，即用**最大似然估计**方法估计模型的参数。
+      - **解码问题**。同样对于已知模型 $\lambda$ = $(A, B, \pi)$，和已知观测序列 $O$ = {$o_1$, $o_2$, ..., $o_M$}，求解最优的隐藏状态序列 $I$ = {$i_1$, $i_2$, ..., $i_N$}，使得 $p(I|O)$ 最大。
+    - 对于基本问题的解法：
+      - 对第一个问题的解法：
+        - 暴力解法：时间复杂度为 $O(TN^T)$；
+        - 前向算法：利用动态规划思想，将前面时刻计算过的概率保存下来。
+      - 对第二个问题的解法：
+        - 
+
+
+
+
+
 ### RNN / LSTM
 
 1. 为什么需要 RNN？
@@ -502,6 +531,15 @@
     ![gru](imgs/gru.jpg)
 
 
+4. 如何计算 LSTM 和 GRU 的参数量？
+
+    一个单元内一共有四个非线性门 ($W[h_{t-1},x_t] + b$)，每一个门内的可训练变量包括一个矩阵 $W$ 和一个置项 $b$。
+
+    因此，一个 LSTM 非线性门的参数即为 **(embed_size + hidden_size) * hidden_size +hidden_size**，LSTM 四个门的总参数量为 **((embed_size + hidden_size) * hidden_size +hidden_size) * 4**。
+
+    同理，一个 GRU 单元的参数量为 **((embed_size + hidden_size) * hidden_size + hidden_size) * 3**。
+
+
 4. RNN / LSTM 的局限性
    
    - 对于 RNN 来说，在访问一个单元前需要遍历之前所有的单元，使得在长文本下极度容易出现梯度消失问题。
@@ -509,4 +547,119 @@
    - 在 LSTM 中，在每一个单元中都有 4 个 MLP 层，需要消耗大量的计算资源，且模型本身不利于并行化。
 
 
-5. 
+### Attention Mechanism / Transformer
+
+1. Seq2Seq 中的 Attention 机制
+
+    在 Seq2Seq 中，我们使用 encoder 将输入文本转化为一个定长向量，再用 decoder 将该向量转换为输出文本。但是，在面对长文本时，我们很难在定长向量中保留完整的输入文本信息，因此在 decode 时会存在信息丢失的问题。为了缓解这个问题，我们引入了 Attention 机制。
+
+    以机器翻译任务举例，在翻译到某一个单词时，我们希望能够注意到这个单词所对应的上下文，并结合之前已翻译的部分作出相应的翻译。这样，我们在 decoder 中就可以注意到输入文本的全部信息，而不只局限于那个定长的向量。
+
+    Attention 的计算过程如下：
+
+    - 得到 encoder 中的 hidden state $\overrightarrow{h_e} = (h_1, h_2, ..., h_n)$。
+    - 假设当前翻译到的 decoder state 为 $\overrightarrow{s_{t-1}}$，则可以计算该状态与输入的每一个单元 $h_j$ 状态的关联性 $e_{tj} = a(s_{t-1},h_j)$，写成向量形式则为 $\overrightarrow{e_t} = a(\overrightarrow{s_{t-1}}, \overrightarrow{h})$，其中，$a$ 是相关性的计算，常见的计算方式有：
+      - 直接点乘 $a(s_{t-1},h_j)=\overrightarrow{s_{t-1}}^T\cdot\overrightarrow{h}$；
+      - 加权点乘 $a(s_{t-1},h_j)=\overrightarrow{s_{t-1}}^T\cdot W \cdot\overrightarrow{h}$，其中，$W$ 是可训练矩阵；
+      - 多层感知机 $a(s_{t-1},h_j)=V \cdot \tanh(W_1 \cdot \overrightarrow{s_{t-1}} + W_2 \cdot \overrightarrow{h})$，其中，$V$、$W_1$、$W_2$ 都是可训练矩阵；
+      - 缩放的点乘 $a(s_{t-1},h_j)=\frac{\overrightarrow{s_{t-1}}^T\cdot\overrightarrow{h}}{\sqrt{|\overrightarrow{h}|}}$。Softmax 函数对非常大的输入很敏感。这会使得梯度的传播出现问题，并且会导致学习的速度下降，甚至会导致学习的停止。那如果我们使用 $\sqrt{|\overrightarrow{h}|}$ 来对输入的向量做缩放，就能够防止进入到 softmax 函数的饱和区，使梯度过小。
+    - 对 $\overrightarrow{e_t}$ 进行 softmax 操作后得到 Attention 分布 $\overrightarrow{\alpha_t} = softmax(\overrightarrow{e_t})$，其中，$\alpha_{tj} = \frac{\exp(e_{tj})}{\sum_{i=1}^n \exp(e_{ti})}$。
+    - 计算得到**上下文表示** $\overrightarrow{c_t}=\sum_{j=1}^n \alpha_{tj}\cdot h_j$。
+    - 我们可以将该上下文表示利用到下一个时间步的状态生成 $s_t = f(s_{t-1}, y_{t-1}, c_t)$。
+
+
+2. Q(Query), K(Key), V(Value)
+
+    在 Attention 中，Q(Query) 指的是被查询的向量，即根据什么来关注其他的单词；K(Key) 指的是查询的向量，即被关注的向量的关键词；V(Value) 则是的被关注的信息本身。
+
+    使用 Q 和 K 计算了相似度之后得到相似度评分，之后有了相似度评分，就可以把内容 V 加权回去了。
+
+
+3. Transformer
+
+    既然我们知道 Attention 机制本身就可以获取上下文信息，那么我们可不可以将原本的 RNN 结构完全去掉，仅仅依赖于 Attention 模型呢？这样我们可以使得训练并行化，并且可以拥有全局的信息。根据这个思想，产生了 Transformer 模型。其模型结构如下：
+
+    ![transformer](imgs/transformer.jpg)
+
+    - Self-Attention 机制
+    
+        Seq2Seq 中的 Attention 机制是在 decode 过程中，逐步计算对应的上下文表示，仿照这个思想，Self-Attention 就是在 encode 阶段，便考虑到每个输入单词与其他单词的关联性，从而得到具有上下文信息的 input embedding 信息。因此，对于 Self-Attention，其 Q, K, V 都来自于同一个输入矩阵，即 Q=K=V。
+
+        Self-Attention 的计算过程如下：
+      - 输入序列 $\overrightarrow{x}$；
+      - 将 $\overrightarrow{x}$ 分别与对应 Q, K, V 的三个可训练矩阵 $W_q$, $W_k$, $W_v$ 点乘，得到 $Q=\overrightarrow{x}\cdot W_q$, $K=\overrightarrow{x}\cdot W_k$, $V=\overrightarrow{x}\cdot W_v$；
+      - 计算 $Attention(Q,K,V)=softmax(\frac{Q\cdot K^T}{\sqrt{d_K}})\cdot V$，其中，$d_K$ 为 $K$ 的维度。
+
+    - Multi-Head Attention
+
+        为了使模型能够从不同角度获取输入序列的上下文信息，同时引入多组 ($W_{qi}$, $W_{ki}$, $W_{vi}$) 矩阵，分别得到多个 ($Q_i$, $K_i$, $V_i$)，再将它们**按列拼接**，之后经过一个联合矩阵 $W_o$，得到最终的 Attention 表示。过程如图所示：
+
+        ![multi-head](imgs/multi-head.jpg)
+
+        注意，在 Transformer 的模型中，有多个 Multi-Head Attention 步骤。其中，encoder 中的 Attention 和 decoder 中的第一步 Attention 的步骤都仅以前一级的输出作为输入，而在 decoder 中的第二步 Attention 则不仅接受来自前一级的输出，还要接收 encoder 的输出。
+
+        即，在第一种 Multi-Head Attention 中，有 $Q = K = V$，在第二种 Multi-Head Attention 中，则 $Q \neq K = V$。
+
+    - Positional Encoding
+
+        由于 Transformer 模型没有循环结构或卷积结构，为了使模型能够学习到输入序列的顺序，我们需要插入一些关于 tokens 位置的信息。因此提出了 **Positional Encoding** 的概念，其与 input embedding 具有相同的维度，便于相加。
+
+        但是，如果直接使用计数的方式来进行 encoding，即 $pos = 1, 2, ..., n - 1$，那么最后一个 token 的encoding 将会比第一个 token 大很多，与原 embedding 相加后会造成数据不平衡的现象。原论文作者们的方法是使用了不同频率的正弦和余弦函数来作为位置编码：
+        $$
+            \begin{aligned}
+                PE_{(pos,2i)}   & = sin(pos/10000^{2i/d_{model}}) \\
+                PE_{(pos,2i+1)} & = cos(pos/10000^{2i/d_{model}}) \\
+            \end{aligned}
+        $$
+    
+    - Add & Norm 层
+      - Add 指的是 Residual Connection，与 ResNet 的原理相似，是将上一层的信息直接传到下一层，可以帮助解决多层神经网络训练困难的问题。
+      - Norm 指的是 Layer Normalization，在层与层之间对每一行数据进行缩放。这样可以缓解梯度消失的状况，同时使模型更快收敛。
+        > **Batch Normalization 和 Layer Normalization 的区别？**
+        > 
+        > 在 BN 中，我们将每一个 batch 中的数据**按列**进行缩放。而在 NLP 任务中，由于输入序列的长度是不确定的，且不同行同一位置的单词直接并没有直接联系，直接做缩放可能会影响原语义表达。因此，在 NLP 等序列型任务中，我们一般采用 Layer Normalization，即对每一行数据进行缩放。
+    
+
+4. BERT: Bi-directional Encoder Representation from Transformers
+
+    - 双向表示
+
+        区别于 Bi-LSTM 的双向表示，分别正序和反序得到表示再进行拼接，BERT 中的双向指的是根据前文和后文来预测被 masked 的单词。
+
+    - Embedding
+
+        BERT 中的 embedding 由三个部分组成：Token Embedding，Segment Embedding，Position Embedding。
+        - Token Embedding 是词向量，其中，第一个词为 [CLS] 标记，可以用于之后的下游任务。
+        - Segment Embedding 用于区分 BERT 输入的两个句子，之后的 pre-training 将会用到。
+        - Position Embedding 由学习得到，而不是普通 Transformer 中的三角函数。
+
+    - Pre-training Tasks
+        - Masked LM
+            
+            在训练过程中，将 15% 的单词用 [mask] 代替，让模型去预测被遮挡的单词，最终的损失函数只计算被遮盖的 token。
+
+            但是如果一直用 [mask] 表示（实际预测时并不会遇到 [mask] 标记）会影响模型，因此作者设置了一下规则：80% 的时间用 [mask] 来代替被遮盖的单词，10% 的时间随机用另一个单词代替，剩下 10% 的时间保留原单词。
+
+            值得注意的是，模型并不知道哪些单词被遮盖了，这使得模型能够关注到每一个单词，依赖上下文信息预测单词，赋予了模型一定的纠错能力。
+        
+        - Next Sentence Prediction
+
+            对于输入的两个句子 A 和 B，让模型预测 B 是否应该是 A 的后一句。该任务的目的是让模型理解两个句子直接的关系。
+    
+    - 为什么BERT在第一句前会加一个 [CLS] 标志?
+
+        为了获得整个句子的语义表示，用于其他任务。一个没有明显语义的 [CLS] 标记会更加**公平**地融合句子中每个单词的语义，从而获得更加完整的句子表示。
+
+    - BERT 的优缺点？
+
+        优点是建立在 Transformer 上，相对rnn更加高效，具有强大的信息提取能力，能捕捉更长距离的依赖。且双向模型比单向的 Transformer 效果更好；
+        
+        缺点则是该模型几乎无法修改，只能拿来直接用。由于只能预测 15% 的词，模型收敛较慢，需要强大算力支撑。
+
+    - 使用BERT预训练模型为什么最多只能输入 512 个词，最多只能两个句子合成一句？
+
+        这是由于在预训练的时候，在参数中设置了 position embedding 的大小和 segment embedding 的大小，分别为 512 和 2。在这之外的单词和句子会没有与之对应的 embedding。
+
+    - BERT 的输入和输出分别是什么？
+
+        输入是 token embedding，segment embedding 和 position embedding，输出是文本中各个字 / 词融合了全文语义信息后的向量表示。
