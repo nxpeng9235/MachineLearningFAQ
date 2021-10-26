@@ -94,7 +94,7 @@
 
     分类结果的混淆矩阵如下表所示。
 
-    ![ConfusionMatrix](imgs/ConfusionMatrix.jpeg)
+    ![ConfusionMatrix](imgs/ConfusionMatrix.jpg)
 
 3. macro-$F_1$ vs micro-$F_1$
 
@@ -254,6 +254,18 @@
     >    
     > 在机器学习中，可以将 $p$ 看作真实分布，$q$ 为预测分布。则当 $p$ 的分布已知时，$H(p)$ 为常数，交叉熵与 KL 散度等价。
 
+
+    ***在分类问题中***，常使用交叉熵作为损失函数，公式表达如下：
+
+    * 二分类问题中，交叉熵损失函数为:
+        $$
+            L = -\frac{1}{N} \sum_i [y_i \log(p_i) + (1 - y_i) \log (1 - p_i)]
+        $$
+    * 多分类问题中，交叉熵损失函数为：
+        $$
+            L = -\frac{1}{N} \sum_i \sum_c^M [y_{ic} \log (p_{ic})]
+        $$
+        其中，$M$ 为类别数量。
 
 
 ### 朴素贝叶斯 Naive Bayes
@@ -676,8 +688,10 @@
 
     训练 word2vec 模型主要有两种方式：CBOW 和 Skip-Gram。
     - CBOW 是让模型根据某个词前面的 C 个词和之后的 C 个词，预测这个词出现的概率。如图，训练过程其实就是学习这两个矩阵 $W$ 和 $W'$，其中，$W$ 矩阵又被叫做 lookup table，即所有词嵌入向量的词表。
+
         ![word2vec-CBOW](imgs/word2vec-CBOW.jpg)
     - Skip-Gram 和 CBOW 相反，是根据某一个词来预测它的前 C 个词和后 C 个词。同样训练两个矩阵 $W$ 和 $W'$，其中，$W$ 矩阵是 lookup table。一般来说，Skip-Gram 的训练时间比 CBOW 要慢。
+
         ![word2vec-skip-gram](imgs/word2vec-skip-gram.jpg)
     
     为了加快训练速度，word2vec 采用了两种优化方式。
@@ -774,7 +788,7 @@
 
     在循环神经网络的每一个时间步骤（time step）中，我们取一个输入 $x_i$ 和上一个节点的权值 $h_{i-1}$ 作为输入，并产生一个输出 $y_i$ 和权值 $h_i$，这个权值又被传递到下一个时间步骤，直到输入序列被读取完毕。
 
-    ![multi-tasks-rnn](imgs/multi-tasks.jpeg)
+    ![multi-tasks-rnn](imgs/multi-tasks.jpg)
 
     普通的 RNN（Vanilla RNN）常使用 BP 算法来训练权值，但由于**梯度消失 / 梯度爆炸**问题，RNN 会丧失学习远距离信息的能力。为了解决远距离依赖问题，提出了 LSTM（Long Short-Term Memory）。
 
@@ -885,13 +899,13 @@
 
     - Multi-Head Attention
 
-        为了使模型能够从不同角度获取输入序列的上下文信息，同时引入多组 ($W_{qi}$, $W_{ki}$, $W_{vi}$) 矩阵，分别得到多个 ($Q_i$, $K_i$, $V_i$)，再将它们**按列拼接**，之后经过一个联合矩阵 $W_o$，得到最终的 Attention 表示。过程如图所示：
+        为了使模型能够**从不同角度获取输入序列的上下文信息表示**，同时引入多组 ($W_{qi}$, $W_{ki}$, $W_{vi}$) 矩阵，分别得到多个 ($Q_i$, $K_i$, $V_i$)，再将它们**按列拼接**，之后经过一个联合矩阵 $W_o$，得到最终的 Attention 表示。过程如图所示：
 
         ![multi-head](imgs/multi-head.jpg)
 
         注意，在 Transformer 的模型中，有多个 Multi-Head Attention 步骤。其中，encoder 中的 Attention 和 decoder 中的第一步 Attention 的步骤都仅以前一级的输出作为输入，而在 decoder 中的第二步 Attention 则不仅接受来自前一级的输出，还要接收 encoder 的输出。
 
-        即，在第一种 Multi-Head Attention 中，有 $Q = K = V$，在第二种 Multi-Head Attention 中，则 $Q \neq K = V$。
+        即，在第一种 Multi-Head Attention 中，有 $Q = K = V$，在第二种 Multi-Head Attention 中，则 $Q \neq K = V$: $Q$ 指的是 target 序列，而 $Q$ 和 $K$ 指的是输入序列。
 
     - Positional Encoding
 
@@ -904,9 +918,21 @@
                 PE_{(pos,2i+1)} & = cos(pos/10000^{2i/d_{model}}) \\
             \end{aligned}
         $$
+
+        ```python
+        def get_positional_embedding(d_model, max_seq_len):
+            positional_embedding = torch.tensor([
+                    [pos / np.power(10000, 2.0 * (i // 2) / d_model) for i in range(d_model)]  # i 的取值为 [0, d_model)
+                    for pos in range(max_seq_len)]  # pos 的取值为 [0, max_seq_len)
+                )
+            # 进行 sin / cos 变换
+            positional_embedding[:, 0::2] = torch.sin(positional_embedding[:, 0::2])
+            positional_embedding[:, 1::2] = torch.cos(positional_embedding[:, 1::2])
+            return positional_embedding
+        ```
     
     - Add & Norm 层
-      - Add 指的是 Residual Connection，与 ResNet 的原理相似，是将上一层的信息直接传到下一层，可以帮助解决多层神经网络训练困难的问题。
+      - Add 指的是 Residual Connection，$y=F(x)+x$. 与 ResNet 的原理相似，是将上一层的信息直接传到下一层，可以帮助解决多层神经网络训练困难的问题。同时，引入残差连接有助于减轻神经网络在深层退化的问题。
       - Norm 指的是 Layer Normalization，在层与层之间对每一行数据进行缩放。这样可以缓解梯度消失的状况，同时使模型更快收敛。
         > **Batch Normalization 和 Layer Normalization 的区别？**
         > 
