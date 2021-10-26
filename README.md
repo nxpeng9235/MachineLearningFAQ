@@ -1,2 +1,2 @@
 # MachineLearningFAQ
-机器学习八股文
+机器学习复习资料
